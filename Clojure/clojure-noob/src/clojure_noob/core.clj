@@ -360,12 +360,12 @@
   (map #(applyTitle (second %)) {:issue "Glitch"})
   
   ; functions like 'first' work with multiple data structures because Clojure
-  ; uses two forms of indirection (mechanism eployed by language so that one name
-  ; can have multiple related meanings). 'first' has multiple, data structure-specific 
+  ; uses two forms of indirection (mechanism employed by language so that one name
+  ; can have multiple related meanings). 'first' has multiple data structure-specific
   ; meanings. Indirection is what makes abstraction possible.
   ; We have polymorphic functions dispatch to different function bodies based on the
   ; type of argument supplied (not so different from multiple-arity functions)
-  ; When ir comes to sequence, Clojure does a lightweight conversion when a sequence
+  ; When it comes to sequence, Clojure does a lightweight conversion when a sequence
   ; is expected (e.g. map, first, rest or cons calls) - it calls the seq function first
   ; to obtain a data strcuture that allows first, rest and cons
   (seq '(1 2 3))
@@ -373,7 +373,7 @@
   (seq #{1 2 3})
   (seq {:name "John" :age 25})
   
-  ; Working with Maps!
+  ;;; Working with Maps! ;;;
   
   ; Using map with multiple arguments
   ; The elements of the first collection will be passed as the first argument
@@ -398,7 +398,7 @@
   (def avg #(/ (sum %) (count %)))
   (defn stats
     [numbers]
-    (map #(% numbers) [sum count avg])) ; In this cas % will receive the functions
+    (map #(% numbers) [sum count avg])) ; In this case % will receive the functions
   
   (stats [3 4 10]) ; We`ll get a list with the sum, count and average
   (stats [80 1 44 13 6])
@@ -411,4 +411,93 @@
      {:name "Santa" :real "Mom"}
      {:name "Easter-bunny" :real "Dad"}])
   (map :real identities)
+
+  ;;; Working with reduce! ;;;
+
+  ; assoc syntax (assoc map key val) | (assoc map key val & kvs)
+  ; e.g.
+  (assoc {} :key1 "value" :key2 "another value") ; => {:key1 "value", :key2 "another value"}
+
+  ; reduce treats {:max 30 :min 10 :avg 20} as a sequence of vectors ([:max 30] [:min 10] [:avg 20])
+  (reduce (fn
+            [new-map [key val]]
+            (assoc new-map key (inc val))) {} {:max 30 :min 10 :avg 20})
+
+  ; The function above could be trasnlated to
+  (assoc (assoc (assoc {} :max (inc 30)) :min (inc 10)) :avg (inc 20))
+
+  ; It can also be used to filter keys from map
+  (reduce (fn [new-map [key val]]
+            (if (> val 4)
+              (assoc new-map key val)
+              new-map)) {} {:human 4.1 :critter 3.9})
+
+  ;;; Take, drop, take-while, and drop-while ;;;
+
+  ; take and drop both take two arguments: a number and a sequence
+  ; take - return the first n elements
+  ; drop - return sequence with first n elements removed
+  (take 3 [0 1 2 3 4 5 6 7 8 9 10]) ; (0 1 2)
+  (drop 3 [0 1 2 3 4 5 6 7 8 9 10]) ; (3 4 5 6 7 8 9 10)
+
+  ; take-while and drop-while takes a predicate function to determine when it should stop taking/droping
+  (def food-journal
+    [{:month 1 :day 1 :human 5.3 :critter 2.3}
+     {:month 1 :day 2 :human 5.1 :critter 2.0}
+     {:month 2 :day 1 :human 4.9 :critter 2.1}
+     {:month 2 :day 2 :human 5.0 :critter 2.5}
+     {:month 3 :day 1 :human 4.2 :critter 3.3}
+     {:month 3 :day 2 :human 4.0 :critter 3.8}
+     {:month 4 :day 1 :human 3.7 :critter 3.9}
+     {:month 4 :day 2 :human 3.7 :critter 3.6}
+     ])
+
+  ; Retrieve just January and february data with take-while
+  ; It only works for sorted data thou. In the first false result from the predicate function, it returns
+  ; the results up to that point
+  (take-while #(< (:month %) 3) food-journal)
+  ; It keeps dropping elements until the predicate function tests true
+  (drop-while #(< (:month %) 3) food-journal)
+
+  ; We can combine take-while and drop-while to retrieve only data from February and March
+  (take-while #(< (:month %) 4) (drop-while #(< (:month %) 2) food-journal))
+
+  ;;; Filter and some ;;;
+
+  ; We can use filter to return all the elements of a sequence that test true for the predicate function
+  ; filter is very useful, but it can endup processing all your data when it isn't reslly necessary
+  ; In this specific case take-while and drop-while work bettter because we already know the set
+  ; of data is sorted by date, so it doesn't have to go through the whole set to bring the data we want
+  (filter #(> (:human %) 5) food-journal)
+  (filter #(< (:month %) 3) food-journal)
+
+  ; In case you just want to test if a collection contains any values that test true for a predicate
+  ; function, you can just use some. It'll return the first truthy value returned by the predicated function
+  (some #(> (:critter %) 4) food-journal) ; It returns nil since we have no critter higher than 4
+  (some #(< (:critter %) 2.5) food-journal) ; true
+
+  ; In the tests above, we were just testing if the collection had a value that satisfied the condition
+  ; In order return the first value that matches it, we should run
+  (some #(and (> (:critter %) 3) %) food-journal) ; and returns the last true value
+
+  ;;; Sort and sort-by ;;;
+
+  ; We can sort things in asc
+  (sort [3 1 2]) ; = (1 2 3)
+
+  ; sort-by allows you to apply a function (often called key function) to the elements of a sequence
+  ; and then uses the values it returns to determine the sort order
+  (sort-by count ["aaa" "c" "bb"]) ; = ("c" "bb" "aaa") ; count is the key function here
+
+  ;;; Concat ;;;
+  ; It can be used to append members of one sequence to the end of another
+  ; (concat A B) - We append the values from sequence B into sequence A
+  (concat [1 2] [3 4]) ; = (1 2 3 4)
+
+  ; Lazy seqs
+  ; We saw that map first calls seq on the passed collection. It actually returns a lazy seq
+  ; A lezy seq is a seq whose members are not computed unless we try to access them
+  ; Computing the seq's members is called realizing the seq
+  ; Deferring the computation until the moment this is really needed makes it more efficient
+  (def source-database)
   )
