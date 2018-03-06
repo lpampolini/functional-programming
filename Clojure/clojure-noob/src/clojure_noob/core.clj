@@ -680,3 +680,71 @@
     [social-security-numbers]
     (filter not-vampire? (map vampire-related-details social-security-numbers)))
   )
+
+(defn functional-programming
+  []
+  ; A pure function is pure if it meets two qualifications
+  ; 1. It always gives the same result if given the same arguments (referential transparency)
+  ; 2. It can't cause any side effects. It can't make changes that are observable from the function itself:
+  ;   - Modifying any external variable or object property
+  ;       (e.g., a global variable, or a variable in the parent function scope chain)
+  ;   - Logging to the console
+  ;   - Writing to the screen/file/network
+  ;   - Triggering any external process
+  ;   - Calling any other functions with side-effects
+  ; It makes the function completely isolated, unable to impact or break other parts of your system
+  ;
+  ; Pure functions are referentially transparent
+  ; To return the same result when called with same arguments, pure functions rely on:
+  ; 1. Their own arguments
+  ; 2. Immutable values to determine their return value
+  ; Your function is not referential transparent if:
+  ;   - It works with random numbers
+  ;   - It reads from a file. The file content can change
+  ;
+  ;;; Working with immutable Data Structures
+  ;
+  ; Clojure has no assignment operator.
+  ; You can't associate a new value with a name without craeting a new scope
+  (def great-baby-name "John") ; We first bind the great-baby-name to "John" in the global scope
+  ; Inside the let scope great-baby-name is binded to "Mary", but when Clojure is done with the let scope
+  ; we are back to the global scope, and calling great-baby-name will result in "John"
+  (let [great-baby-name "Mary"] great-baby-name)
+
+  ; We`ll use arity overloading with recursion to solve the sum problem
+  (defn sum
+    ([vals] (sum vals 0)) ; We define a default value for the accumulating total
+    ([vals accumulating-total]
+     (if (empty? vals)
+       accumulating-total
+       ; We keep calling sum recursively, removing the first item. E.g. (sum [2 3 5])
+       ; (sum [3 5] (+ 2 0) - 0 is the default value for the accumulator
+       ; (sum [5] (+ 3 2) - We have incremented the acumulator with 2 in the last step
+       ; (sum [] (+ 5 5) - On the next step, vals will be empty, and the accumulator of 10 will be returned
+       ; Each recursive call created a new scope where vals and accumulating-total are bounded to different values
+       (sum (rest vals) (+ (first vals) accumulating-total)))))
+  ; The example above was only to exemplify the recursion
+  ; Generally we'd use recur when doing recursion for performance reasons
+  (defn improved-sum
+    ([vals] (sum vals 0))
+    ([vals accumulating-total]
+      (if (empty? vals)
+        accumulating-total
+        (recur (rest vals) (+ (first vals) accumulating-total)))))
+
+  ;;; Using function composition instead of attribute mutation ;;;
+
+  ; We combine two pure functions (replace and trim) in order to achieve the desired result
+  ; Combining functions like this - so that the value of one function is passaed as an argument to another
+  ; is called function composition
+  (defn clean
+    [text]
+    (clojure.string/replace (clojure.string/trim text) #"lol" "LOL"))
+
+  ; In functional programming you think of data as something unchanging,
+  ; and you derive new data from existing data
+  ; You can also derive new functions from existing functions
+
+  ;;; comp ;;;
+
+  )
