@@ -747,4 +747,59 @@
 
   ;;; comp ;;;
 
+  ; You can use comp for creating a new function from the composition of any number of functions
+  ; Here we are composing the inc and * functions. Then you apply this function to the arguments 2, 3
+  ; It'll multiply the numbers and then increment the result.
+  ((comp inc *) 2 3) ; results in 7
+  ; this would be equivalent to
+  (inc (* 2 3))
+  ; comp of f1, f2, f3, ..., fn created a function g(x1, x2, ..., xn) = f1(f2(fn(x1, x2,... xn)))
+  ; It's important to notice the sequence of the function and the expected arguments. inc expects a single
+  ; integer argument, but * can have multiple entries
+  ; RPG example
+  (def character
+    {:name "John" :attributes {:inteligence 10 :strengh 4 :dexterity 5}})
+  (def c-int
+    (comp :inteligence :attributes))
+  (def c-str
+    (comp :strengh :attributes))
+  (def c-dex
+    (comp :dexterity :attributes))
+
+  (c-int character)
+  (c-str character)
+  (c-dex character)
+
+  ; This could be translated to
+  (fn [c] (:strengh (:attributes c)))
+
+  ; Comp makes it more elegant and readable
+  ; If the composition needs to take more than one argument
+  (defn spell-slots
+    [char]
+    (int (inc (/ (c-int char) 2))))
+  (spell-slots character)
+
+  ; Makind the spell-slots based on comp. We wraped de division by 2 inside an anonymous function to be
+  ; passed to comp
+  (def spell-slots-comp (comp int inc #(/ % 2) c-int))
+
+  ;;; memoize ;;;
+
+  ; Memoization lets you take advantage of referential transparency by sorting the arguments passed
+  ; to a function and the return value of the function. That way, subsequent calls to the function
+  ; with the same argument can return the results immediatly. This is specially useful for functions
+  ; that take a lot of time to run.
+  (defn identify
+    "Returns any given value after a second"
+    [x]
+    (Thread/sleep 1000) x)
+
+  ;The function identify will always take 1 second to be executed, but with memoize, only the first
+  ; call takes 1 second, the subsequent calls with same argument return right away
+  (def memo-identify
+    (memoize identify))
+  (memo-identify "Batman")
+  (time(memo-identify "Batman")); the second call takes 0.05544 ms
+
   )
